@@ -1,26 +1,79 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React from "react";
+import { v4 as uuidv4 } from 'uuid';
+import useLocalStorage from './useLocalStorage'
 
-function App() {
+import { initialTodos } from "./initialTodos";
+import type { Todo, ToggleComplete, AddTodo, DeleteTodo, EditTodo } from "./types";
+import { TodoList } from "./TodoList";
+import { AddTodoForm } from "./AddTodoForm";
+
+const App: React.FC = () => {
+  const [todos, setTodos] = useLocalStorage<Array<Todo>>('todos', initialTodos);
+
+  const toggleComplete: ToggleComplete = selectedTodo => {
+    const updatedTodos = todos.map(todo => {
+      if (todo === selectedTodo) {
+        return { ...todo, complete: !todo.complete };
+      }
+      return todo;
+    });
+    setTodos(updatedTodos);
+  };
+
+  const addTodo: AddTodo = (newTodo:string) => {
+    console.log(newTodo)
+    newTodo.trim() !== "" &&
+      // How I add the todo make it sort in descending order
+      setTodos([{
+        id: uuidv4(), 
+        text: newTodo, 
+        complete: false, 
+        time: new Date().toUTCString()
+      }, ...todos]);
+  };
+
+  const deleteTodo: DeleteTodo = (id: string)=>{
+    setTodos(prevTodos=>{
+      return prevTodos.filter(todo=>todo.id !== id)
+    })
+  }
+
+  const editTodo: EditTodo = (text: string, id: string)=> {
+    setTodos(prevTodos=>{
+      return prevTodos.map(todo=>{
+        if(todo.id === id) {
+          return {
+            ...todo,
+            text,
+          }
+        }
+        return todo;
+      })
+    })
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div 
+      style={{
+        width: "100vw", 
+        display: 'flex', 
+        flexDirection: "column", 
+        justifyContent: 'center',
+        alignItems: "center",
+        marginTop: 80
+      }}
+    >
+      <div style={{minWidth: 300, maxWidth: 500}}>
+        <AddTodoForm addTodo={addTodo} />
+        <TodoList 
+          deleteTodo={deleteTodo} 
+          todos={todos} 
+          toggleComplete={toggleComplete} 
+          editTodo={editTodo}
+        />
+      </div>
     </div>
   );
-}
+};
 
 export default App;
